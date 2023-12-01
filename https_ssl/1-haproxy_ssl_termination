@@ -21,7 +21,7 @@ frontend www-https
     default_backend www-backend
 
 backend www-backend
-    server web-server 127.0.0.1:80
+    server web-server 52.206.14.32:80
 EOL
 
 # Restart HAProxy

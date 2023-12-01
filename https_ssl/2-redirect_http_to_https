@@ -21,4 +21,4 @@ frontend https_frontend
 
 backend your_backend
     # Add your backend server configuration here if needed
-    server your_server 127.0.0.1:8080  # Replace with your actual backend server address and port
+    server your_server 52.206.14.32:8080  # Replace with your actual backend server address and port
