@@ -1,28 +1,55 @@
 #!/usr/bin/env bash
 # This script configures HAProxy for SSL termination
 
-# Update package lists
+# Install HAProxy (version 1.5 or higher)
 sudo apt-get update
-
-# Install HAProxy
-sudo apt-get install -y haproxy
+sudo apt-get install haproxy
 
 # Install Certbot
-sudo apt-get install -y certbot
+sudo apt-get install certbot
 
-# Obtain SSL certificate using Certbot
+# Obtain SSL certificate using Certbot for your subdomain www.
 sudo certbot certonly --standalone -d www.yourdomain.com
 
-# Configure HAProxy for SSL termination
-cat <<EOL | sudo tee /etc/haproxy/haproxy.cfg
+# Create/Edit the HAProxy configuration file
+sudo tee /etc/haproxy/haproxy.cfg > /dev/null <<'EOF'
+global
+    log /dev/log local0
+    log /dev/log local1 notice
+    chroot /var/lib/haproxy
+    stats socket /run/haproxy/admin.sock mode 660 level admin expose-fd listeners
+    stats timeout 30s
+    user haproxy
+    group haproxy
+    daemon
+
+defaults
+    log global
+    mode http
+    option httplog
+    option dontlognull
+    timeout connect 5000
+    timeout client 50000
+    timeout server 50000
+
 frontend www-https
     bind *:443 ssl crt /etc/letsencrypt/live/www.yourdomain.com/fullchain.pem
     reqadd X-Forwarded-Proto:\ https
     default_backend www-backend
 
 backend www-backend
-    server web-server 52.206.14.32:80
-EOL
+    mode http
+    balance roundrobin
+    option httpchk HEAD / HTTP/1.1\r\nHost:localhost
+    server web-server 127.0.0.1:80 check
+EOF
 
 # Restart HAProxy
 sudo service haproxy restart
+
+# Verify HAProxy is listening on port 443
+sudo netstat -tulpn | grep haproxy
+
+# Test SSL Termination
+curl -sI https://www.yourdomain.com
+curl https://www.yourdomain.com
